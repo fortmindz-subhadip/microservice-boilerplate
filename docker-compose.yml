@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./user-service/.env
+    depends_on:
+      - user-mongo
+    restart: unless-stopped
+
+  email-service:
+    build:
+      context: ./email-service
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"      # Fixed port mapping: host 4000 to container 4000 (was "40000:4000" - 40000 is invalid)
+    env_file:
+      - ./email-service/.env
+    depends_on:
+      - email-mongo
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./api-gateway/.env
+    depends_on:
+      - user-service
+      - email-service
+    restart: unless-stopped
+
+  user-mongo:
+    image: mongo:latest
+    container_name: user-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - user-mongo-data:/data/db
+    restart: unless-stopped
+
+  email-mongo:
+    image: mongo:latest
+    container_name: email-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - email-mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  user-mongo-data:
+  email-mongo-data:
